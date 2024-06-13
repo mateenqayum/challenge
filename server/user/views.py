@@ -28,6 +28,23 @@ def get_user_tokens(user):
 @rest_decorators.api_view(["POST"])
 @rest_decorators.permission_classes([])
 def loginView(request):
+    """
+        post:
+        Authenticate a user and set access and refresh tokens as cookies.
+
+        This endpoint allows users to log in using their email and password. Upon successful authentication,
+        it sets secure cookies for both access and refresh tokens and returns these tokens in the response body.
+
+        Parameters:
+        - email (str): User's email address.
+        - password (str): User's password.
+
+        Returns:
+        - A response containing the access and refresh tokens with cookies set for the same tokens.
+
+        Raises:
+        - 401 Unauthorized: If the email or password is incorrect.
+    """
     serializer = serializers.LoginSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
 
@@ -67,6 +84,26 @@ def loginView(request):
 @rest_decorators.api_view(["POST"])
 @rest_decorators.permission_classes([])
 def registerView(request):
+    """
+        post:
+        Register a new user with the provided credentials.
+
+        This endpoint allows for the registration of a new user. If the provided credentials are valid
+        and the registration is successful, it returns a success message. Otherwise, it raises an
+        authentication failure response.
+
+        Parameters:
+        - email (str): User's email address.
+        - password (str): User's password.
+        - first_name (str, optional): User's first name.
+        - last_name (str, optional): User's last name.
+
+        Returns:
+        - A success message indicating successful registration.
+
+        Raises:
+        - 401 Unauthorized: If the credentials are invalid.
+    """
     serializer = serializers.RegistrationSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
 
@@ -80,6 +117,19 @@ def registerView(request):
 @rest_decorators.api_view(['POST'])
 @rest_decorators.permission_classes([rest_permissions.IsAuthenticated])
 def logoutView(request):
+    """
+        post:
+        Logs out a user by blacklisting the refresh token and clearing the related cookies.
+
+        This endpoint will retrieve the refresh token from the cookie, blacklist it, and then
+        clear both access and refresh token cookies. It is available only to authenticated users.
+
+        Returns:
+        - A response indicating that the cookies have been cleared.
+
+        Raises:
+        - 400 Bad Request: If the refresh token is invalid or not provided.
+    """
     try:
         refreshToken = request.COOKIES.get(
             settings.SIMPLE_JWT['AUTH_COOKIE_REFRESH'])
@@ -132,6 +182,19 @@ class CookieTokenRefreshView(jwt_views.TokenRefreshView):
 @rest_decorators.api_view(["GET"])
 @rest_decorators.permission_classes([rest_permissions.IsAuthenticated])
 def user(request):
+    """
+        get:
+        Retrieve the authenticated user's details.
+
+        This endpoint fetches the details of the currently authenticated user based on the user ID
+        from the session. It is only accessible to authenticated users.
+
+        Returns:
+        - A JSON response containing the user's serialized data.
+
+        Raises:
+        - 404 Not Found: If no user is found with the associated ID.
+    """
     try:
         user = models.User.objects.get(id=request.user.id)
     except models.User.DoesNotExist:
@@ -144,6 +207,19 @@ def user(request):
 @rest_decorators.api_view(["GET"])
 @rest_decorators.permission_classes([rest_permissions.IsAuthenticated])
 def getSubscriptions(request):
+    """
+        get:
+        Retrieve active subscriptions for the authenticated user from Stripe.
+
+        This endpoint queries the Stripe API to fetch active subscriptions associated with the
+        authenticated user's email. It returns a list of active subscription details.
+
+        Returns:
+        - A JSON response containing a list of active subscriptions.
+
+        Raises:
+        - 404 Not Found: If the user is not found or no subscriptions exist.
+    """
     try:
         user = models.User.objects.get(id=request.user.id)
     except models.User.DoesNotExist:
